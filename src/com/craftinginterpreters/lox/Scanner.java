@@ -69,6 +69,16 @@ public class Scanner {
                 if (match('/')) { // A comment goes until the end of the line.
                     while (peek() != '\n' && !isAtEnd())
                         advance();
+                } else if (match('*')) {    // Handle C-style comment -> /*...*/
+                    while (!isAtEnd() && !matchStr("*/")) {
+                        if (peek() == '\n')
+                            line++;
+                        advance();
+                    }
+
+                    if (isAtEnd()) {
+                        Lox.error(line, "Unterminated C-style comments, it should be /* ... */.");
+                    }
                 } else {
                     addToken(TokenType.SLASH);
                 }
@@ -161,14 +171,30 @@ public class Scanner {
         }
     }
 
+    private boolean matchStr(String expected) {
+        if (isAtEnd())
+            return false;
+        if (expected.length() > source.length() - current)
+            return false;
+
+        if (source.startsWith(expected, current)) {
+            current += expected.length();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private boolean match(char expected) {
         if (isAtEnd())
             return false;
-        if (source.charAt(current) != expected)
-            return false;
 
-        current++;
-        return true;
+        if (source.charAt(current) != expected) {   // not matched
+            return false;
+        } else {    // matched
+            current++;
+            return true;
+        }
     }
 
     private char advance() { // get current character
