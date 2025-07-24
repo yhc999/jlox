@@ -34,7 +34,7 @@ public class Scanner {
     }
 
 
-    Scanner(String source) {
+    public Scanner(String source) {
         this.source = source;
     }
 
