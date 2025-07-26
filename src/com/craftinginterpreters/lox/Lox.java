@@ -1,10 +1,9 @@
 package com.craftinginterpreters.lox;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -12,8 +11,12 @@ import java.util.List;
 public class Lox {
     static boolean hadError = false;
 
-    static void error(int line, String message) {
-        report(line, "", message);
+    static void error(Token token, String message) {
+        if (token.type == TokenType.EOF) {
+            report(token.line, " at end", message);
+        } else {
+            report(token.line, " at '" + token.lexeme + "'", message);
+        }
     }
     private static void report(int line, String where, String message) {
         System.err.println(
@@ -46,9 +49,35 @@ public class Lox {
     private static void run(String source) {
         Scanner scanner = new com.craftinginterpreters.lox.Scanner(source);
         List<Token> tokens = scanner.scanTokens();
+        Parser parser = new Parser(tokens);
 
-        for (Token token : tokens) {
-            System.out.println(token);
+        Expr expression = parser.parse();
+        if (hadError)   // Stop if there was syntax error.
+            return;
+
+        System.out.println(new AstPrinter().print(expression));
+    }
+
+    // check arg is valid file
+    private static boolean isValidArg(String filePath) {
+        File file = new File(filePath);
+
+        // 基础判断：文件是否存在，是文件（不是目录），且可读
+        if (!file.exists() || !file.isFile() || !file.canRead()) {
+            return false;
+        }
+
+        // 尝试按文本方式读取前几行，判断是否为文本文件
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            int linesChecked = 0;
+            while (linesChecked < 5) {
+                String line = reader.readLine();
+                if (line == null) break;  // EOF reached
+                linesChecked++;
+            }
+            return true;  // 如果能正常读取几行，说明大概率是合法文本文件
+        } catch (IOException e) {
+            return false; // 无法读取，说明可能不是合法文本文件
         }
     }
 
@@ -57,7 +86,12 @@ public class Lox {
             System.out.println("Usage: jlox [script]");
             System.exit(64);
         } else if (args.length == 1) {
-            runFile(args[0]);
+            if (isValidArg(args[0])) {
+                runFile(args[0]);
+            } else {
+                System.out.println(args[0] + " is invalid file");
+                System.exit(2);
+            }
         } else {
             runPrompt();
         }

@@ -38,7 +38,7 @@ public class Scanner {
         this.source = source;
     }
 
-    List<Token> scanTokens() {
+    public List<Token> scanTokens() {
         while (!isAtEnd()) {
             start = current;
             scanToken();
@@ -77,7 +77,7 @@ public class Scanner {
                     }
 
                     if (isAtEnd()) {
-                        Lox.error(line, "Unterminated C-style comments, it should be /* ... */.");
+                        Lox.error(token(), "Unterminated C-style comments, it should be /* ... */.");
                     }
                 } else {
                     addToken(TokenType.SLASH);
@@ -92,9 +92,18 @@ public class Scanner {
                 } else if (isAlpha(c)) {
                     identifier();
                 } else {
-                    Lox.error(line, "Unexpected character");
+                    Lox.error(token(), "Unexpected character");
                 }
             }
+        }
+    }
+
+    // get current token -> helper function for Lox.error()
+    private Token token() {
+        if (isAtEnd()) {
+            return new Token(TokenType.EOF, "eof", "", line);
+        } else {
+            return new Token(TokenType.NIL, source.substring(start, current), source.substring(start, current), line);
         }
     }
 
@@ -152,7 +161,7 @@ public class Scanner {
         }
 
         if (isAtEnd()) {
-            Lox.error(line, "Unterminated string.");
+            Lox.error(token(), "Unterminated string.");
             return;
         }
 
