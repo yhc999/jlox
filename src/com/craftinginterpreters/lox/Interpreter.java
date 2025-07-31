@@ -59,8 +59,12 @@ public class Interpreter implements Expr.Visitor<Object> {
             case PLUS -> { // +
                 if (left instanceof Double && right instanceof Double)
                     return (double) left + (double) right;
+                if (left instanceof String && right instanceof String)
+                    return left + (String) right;
                 if (left instanceof String && right instanceof Double)
-                    return (double) left + (double) right;
+                    return left + stringify(right);
+                if (left instanceof Double && right instanceof String)
+                    return stringify(left) + right;
 
                 throw new RuntimeError(expr.operator,
                         "Operands must be two numbers or two strings.");
@@ -75,6 +79,8 @@ public class Interpreter implements Expr.Visitor<Object> {
             }
             case SLASH -> { // /
                 checkNumberOperands(expr.operator, left, right);
+                if ((double) right == 0)
+                    throw new RuntimeError(expr.operator, "除数不能为0");
                 return (double) left / (double) right;
             }
         }
@@ -138,4 +144,5 @@ public class Interpreter implements Expr.Visitor<Object> {
             return;
         throw new RuntimeError(operator, "Operands must be numbers.");
     }
+
 }
